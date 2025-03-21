@@ -1,0 +1,131 @@
+installation:
+ 1)npm init -y
+ 2) npm install express mongoose body-parser cors
+ 3) mongod
+ 4) node server.js
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Create Operation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Customer Feedback</h2>
+        <form id="userForm">
+            <input type="text" id="name" placeholder="Enter Name" required>
+            <input type="text" id="phone" placeholder="Enter Phone" required pattern="\d{10}" maxlength="10">
+            <input type="text" id="Feedback" placeholder="Enter Feedback" required>
+            <input type="email" id="email" placeholder="Enter Email" required>
+            <button type="submit">Add User</button>
+        </form>
+        <p id="responseMessage"></p>
+    </div>
+    <script>
+        document.getElementById("userForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+    
+            const name = document.getElementById("name").value;
+            const phone = document.getElementById("phone").value;
+            const feedback = document.getElementById("Feedback").value;
+            const email = document.getElementById("email").value;
+    
+            const response = await fetch("http://localhost:3000/addUser", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, phone, feedback, email }),
+            });
+    
+            const result = await response.json();
+            document.getElementById("responseMessage").textContent = result.message;
+            document.getElementById("userForm").reset();
+        });
+    </script>
+</body>
+</html>
+
+css:
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    text-align: center;
+    margin: 50px;
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    margin: auto;
+    box-shadow: 0px 0px 10px gray;
+}
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+button {
+    padding: 10px;
+    border: none;
+    background: green;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+}
+button:hover {
+    background: darkgreen;
+}
+server:
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// MongoDB se connect karna
+mongoose.connect("mongodb://127.0.0.1:27017/crudDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+db.once("open", () => console.log("MongoDB Connected Successfully! "));
+
+// Schema & Model
+const UserSchema = new mongoose.Schema({
+  name: String,
+  phone: String,
+  feedback: String,
+  email: String,
+});
+
+const User = mongoose.model("User", UserSchema);
+
+// Create (POST) Route
+app.post("/addUser", async (req, res) => {
+  try {
+    const { name, phone, feedback, email } = req.body;
+    const newUser = new User({ name, phone, feedback, email });
+    await newUser.save();
+    res.status(201).json({ message: "Feedback Added Successfully! " });
+  } catch (error) {
+    res.status(500).json({ error: "Error saving user feedback" });
+  }
+});
+
+// Server start
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
