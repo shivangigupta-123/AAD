@@ -1,0 +1,131 @@
+install:
+ npm init -y
+ npm install express mongoose body-parser cors
+ mongod
+ node server.js
+html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Information Form</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Teacher Information</h2>
+        <form id="teacherForm">
+            <input type="text" id="name" placeholder="Enter Teacher's Name" required>
+            <input type="text" id="subject" placeholder="Enter Subject" required>
+            <input type="text" id="phone" placeholder="Enter Phone" required pattern="\d{10}" maxlength="10">
+            <input type="email" id="email" placeholder="Enter Email" required>
+            <button type="submit">Add Teacher</button>
+        </form>
+        <p id="responseMessage"></p>
+    </div>
+
+    <script>
+        document.getElementById("teacherForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById("name").value;
+            const subject = document.getElementById("subject").value;
+            const phone = document.getElementById("phone").value;
+            const email = document.getElementById("email").value;
+
+            const response = await fetch("http://localhost:3000/addTeacher", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, subject, phone, email }),
+            });
+
+            const result = await response.json();
+            document.getElementById("responseMessage").textContent = result.message;
+            document.getElementById("teacherForm").reset();
+        });
+    </script>
+</body>
+</html>
+css:
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    text-align: center;
+    margin: 50px;
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 350px;
+    margin: auto;
+    box-shadow: 0px 0px 10px gray;
+}
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+button {
+    padding: 10px;
+    border: none;
+    background: blue;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+}
+button:hover {
+    background: darkblue;
+}
+server:
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// MongoDB se connect karna
+mongoose.connect("mongodb://127.0.0.1:27017/schoolDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+db.once("open", () => console.log("MongoDB Connected Successfully!"));
+
+// Schema & Model
+const TeacherSchema = new mongoose.Schema({
+  name: String,
+  subject: String,
+  phone: String,
+  email: String,
+});
+
+const Teacher = mongoose.model("Teacher", TeacherSchema);
+
+// Create (POST) Route
+app.post("/addTeacher", async (req, res) => {
+  try {
+    const { name, subject, phone, email } = req.body;
+    const newTeacher = new Teacher({ name, subject, phone, email });
+    await newTeacher.save();
+    res.status(201).json({ message: "Teacher Information Added Successfully!" });
+  } catch (error) {
+    res.status(500).json({ error: "Error saving teacher information" });
+  }
+});
+
+// Server start
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
