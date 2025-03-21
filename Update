@@ -1,0 +1,95 @@
+create:server.js (run with node server.js)
+const mongoose = require('mongoose');
+
+mongoose.connect("mongodb://127.0.0.1:27017/schoolDB", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log("Connected to database!");
+}).catch((err) => {
+    console.error("Database connection error:", err);
+});
+
+// Define Schema
+const studentSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    rollNo: { type: Number, required: true, unique: true },
+    class: { type: String, required: true },
+    age: { type: Number, required: true, min: 3 },
+    email: { type: String, required: true, match: /\S+@\S+\.\S+/ }
+});
+
+// Create Model
+const Student = mongoose.model("Student", studentSchema);
+
+// Function to save student
+const saveStudent = async () => {
+    try {
+        const student = new Student({
+            name: "Shivangi Gupta",
+            rollNo: 22310,
+            class: "SCS",
+            age: 18,
+            email: "shivangigupta@gmail.com"
+        });
+
+        const result = await student.save();
+        console.log("Student saved successfully:", result);
+    } catch (err) {
+        console.error("Error saving student:", err);
+    } finally {
+        mongoose.connection.close();
+    }
+};
+
+// Call the function to save the student
+saveStudent();
+
+Update:index.js(run with node index.js)
+const mongoose = require('mongoose');
+
+mongoose.connect("mongodb://127.0.0.1:27017/schoolDB", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log("Connected to database!");
+}).catch((err) => {
+    console.error("Database connection error:", err);
+});
+
+// Define Schema
+const studentSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    rollNo: { type: Number, required: true, unique: true },
+    class: { type: String, required: true },
+    age: { type: Number, required: true, min: 3 },
+    email: { type: String, required: true, match: /\S+@\S+\.\S+/ }
+});
+
+// Create Model
+const Student = mongoose.model("Student", studentSchema);
+
+// Function to update student
+const updateStudent = async () => {
+    try {
+        const result = await Student.updateOne(
+            { rollNo: 22310 },  // Filter criteria
+            { $set: { name: "Shivangi Rajkumar Gupta", age: 19 } } // Update fields
+        );
+
+        if (result.matchedCount === 0) {
+            console.log("No document found with the given roll number.");
+        } else if (result.modifiedCount === 0) {
+            console.log("Document found but no update was needed.");
+        } else {
+            console.log("Document updated successfully.");
+        }
+    } catch (err) {
+        console.error("Error updating document:", err);
+    } finally {
+        mongoose.connection.close();
+    }
+};
+
+// Call the function to update the student
+updateStudent();
